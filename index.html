@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Prince of Persia 2D — Palace Adventure</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕌</text></svg>">
+<meta name="description" content="A Prince of Persia style 2D action adventure for phone and tablet. Run, jump, climb, fight guards, dodge traps, rescue the princess.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="wrap">
+  <div id="topbar">
+    <div>
+      <div class="logo">🕌 PRINCE OF PERSIA 2D</div>
+      <div class="sub">Palace Adventure • phone &amp; tablet ready</div>
+    </div>
+    <div id="hud">
+      <span class="pill">❤ <b id="hHP">5</b></span>
+      <span class="pill">🏰 Lv <b id="hLv">1/3</b></span>
+      <span class="pill">⏳ <b id="hTime">10:00</b></span>
+      <span class="pill">★ <b id="hScore">0</b></span>
+      <span class="pill">🗡 <b id="hSword">sheathed</b></span>
+    </div>
+  </div>
+  <div id="stage">
+    <div id="rotateHint">📱 Rotate your device for the full palace view 🏰</div>
+    <div id="frame">
+      <canvas id="game" width="960" height="540"></canvas>
+      <div id="toast"></div>
+      <div id="touch">
+        <div class="tcluster">
+          <div class="tbtn" id="tLeft">◀</div>
+          <div class="tbtn" id="tRight">▶</div>
+          <div class="tcluster" style="flex-direction:column;gap:10px">
+            <div class="tbtn small" id="tUp">▲</div>
+            <div class="tbtn small" id="tDown">▼</div>
+          </div>
+        </div>
+        <div class="tcluster" id="rightBtns">
+          <div class="tbtn small" id="tSword">🗡</div>
+          <div class="tbtn small" id="tBlock">🛡</div>
+          <div class="tbtn" id="tAtk">⚔</div>
+          <div class="tbtn" id="tJump">⤒</div>
+        </div>
+      </div>
+      <div id="overlay"><div class="card" id="card"></div></div>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>

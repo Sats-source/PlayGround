@@ -1,0 +1,42 @@
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#0b0e1a;color:#f5e9c8;font-family:'Trebuchet MS',Verdana,system-ui,sans-serif;overflow:hidden;overscroll-behavior:none}
+#wrap{position:fixed;inset:0;display:flex;flex-direction:column;background:radial-gradient(120% 100% at 50% 0%,#1c2450 0%,#0b0e1a 60%,#060814 100%)}
+#topbar{display:flex;align-items:center;gap:8px;padding:8px 10px;z-index:5}
+#topbar .logo{font-weight:900;letter-spacing:.5px;font-size:15px;color:#ffd97a;text-shadow:0 2px 0 #5a2d0c,0 0 18px rgba(255,180,60,.35);white-space:nowrap}
+#topbar .sub{font-size:11px;opacity:.7;white-space:nowrap}
+#hud{display:flex;gap:8px;margin-left:auto;align-items:center;font-size:12px}
+.pill{background:rgba(0,0,0,.45);border:1px solid rgba(255,217,122,.35);border-radius:999px;padding:4px 10px;white-space:nowrap}
+.pill b{color:#ffd97a}
+button{font-family:inherit}
+#stage{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 8px 4px;flex-direction:column;gap:6px}
+#rotateHint{display:none;font-size:12px;color:#ffe9b0;background:rgba(0,0,0,.45);border:1px solid rgba(255,217,122,.35);border-radius:999px;padding:4px 12px}
+@media (orientation:portrait) and (max-width:640px){#rotateHint{display:block}}
+#frame{position:relative;width:min(100%,calc((100vh - 150px)*16/9));aspect-ratio:16/9;max-height:100%;border-radius:14px;overflow:hidden;border:1px solid rgba(255,217,122,.35);box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 6px rgba(20,16,40,.6);background:#000}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:18px;background:radial-gradient(100% 100% at 50% 30%,rgba(20,10,40,.55),rgba(4,4,10,.88));backdrop-filter:blur(2px);z-index:6}
+#overlay.hidden{display:none}
+.card{max-width:560px;width:92%;background:linear-gradient(180deg,#241a4d,#120d28);border:1px solid #ffd97a66;border-radius:16px;padding:22px 20px;box-shadow:0 10px 40px #000}
+.card h1{font-size:clamp(22px,4.5vw,38px);color:#ffd97a;letter-spacing:1px;margin-bottom:6px}
+.card h2{font-size:15px;color:#ffb0b0;font-weight:700;margin-bottom:8px}
+.card p{font-size:14px;line-height:1.5;opacity:.92;margin-bottom:10px}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.btn{background:linear-gradient(180deg,#ffcf6b,#e08b1f);border:none;color:#3a1c00;font-weight:900;padding:12px 20px;border-radius:12px;font-size:15px;cursor:pointer;box-shadow:0 4px 0 #7a3f06;min-width:150px}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #7a3f06}
+.btn.ghost{background:rgba(255,255,255,.08);color:#ffe9b0;box-shadow:none;border:1px solid #ffd97a55;min-width:120px}
+.keys{font-size:12px;opacity:.8;background:rgba(0,0,0,.35);border-radius:10px;padding:8px 10px;margin-top:10px;line-height:1.7}
+#toast{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:rgba(0,0,0,.7);border:1px solid #ffd97a88;color:#ffe9b0;padding:7px 14px;border-radius:999px;font-size:13px;z-index:7;pointer-events:none;opacity:0;transition:opacity .25s}
+#touch{position:absolute;inset:auto 0 0 0;display:flex;justify-content:space-between;align-items:flex-end;padding:8px 10px calc(10px + env(safe-area-inset-bottom));z-index:5;pointer-events:none}
+.tcluster{display:flex;gap:10px;align-items:flex-end;pointer-events:none}
+.tbtn{pointer-events:auto;user-select:none;-webkit-user-select:none;width:58px;height:58px;border-radius:50%;border:1px solid rgba(255,217,122,.6);background:rgba(10,10,25,.55);color:#ffe9b0;font-size:20px;font-weight:900;display:flex;align-items:center;justify-content:center;touch-action:none;backdrop-filter:blur(3px)}
+.tbtn.small{width:50px;height:50px;font-size:13px}
+.tbtn:active,.tbtn.on{background:rgba(255,200,90,.85);color:#3a1c00}
+#rightBtns{flex-wrap:wrap;justify-content:flex-end;max-width:46%}
+@media (pointer:coarse){.tbtn{width:62px;height:62px}}
+@media (max-width:640px){
+  #topbar .sub{display:none}
+  #hud{font-size:11px;gap:5px}
+  .pill{padding:3px 8px}
+  #frame{width:100%}
+  .tbtn{width:56px;height:56px}
+  .tbtn.small{width:48px;height:48px}
+}
