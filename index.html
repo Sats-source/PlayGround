@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Palace Runner — Flight of the Intruder</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🛕</text></svg>">
+<style>
+  :root{
+    --gold:#e8b64c; --gold-hi:#ffe6a3; --sand:#d9a86c; --ink:#1a0f2e;
+    --vermilion:#c73e1d; --emerald:#2e8b57; --saffron:#ff9a3c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{width:100%;height:100%;overflow:hidden;background:#141021;font-family:Georgia,'Times New Roman',serif;
+    touch-action:none;user-select:none;-webkit-user-select:none}
+  #game-canvas{position:fixed;inset:0;display:block}
+  /* ---------- cinematic overlays ---------- */
+  #vignette{position:fixed;inset:0;pointer-events:none;z-index:5;
+    background:radial-gradient(ellipse at center,transparent 52%,rgba(10,4,20,.38) 82%,rgba(5,2,12,.72) 100%);}
+  #warmgrade{position:fixed;inset:0;pointer-events:none;z-index:5;mix-blend-mode:overlay;opacity:.35;
+    background:linear-gradient(180deg,rgba(64,40,120,.35) 0%,transparent 40%,rgba(255,150,50,.28) 100%);}
+  #speedlines{position:fixed;inset:0;pointer-events:none;z-index:6;opacity:0;transition:opacity .4s;
+    background:repeating-conic-gradient(from 0deg at 50% 55%,transparent 0deg 7deg,rgba(255,240,210,.10) 7deg 8deg);}
+  #damage-flash{position:fixed;inset:0;pointer-events:none;z-index:7;opacity:0;background:radial-gradient(ellipse at center,rgba(255,60,20,.12) 40%,rgba(200,20,10,.55) 100%);}
+  #letterbox-top,#letterbox-bot{position:fixed;left:0;right:0;height:0;background:#000;z-index:8;transition:height .5s}
+  #letterbox-top{top:0}#letterbox-bot{bottom:0}
+  body.dying #letterbox-top,body.dying #letterbox-bot{height:7vh}
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:10;display:none}
+  body.playing #hud{display:block}
+  .hud-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:14px 18px}
+  .stone-plate{background:linear-gradient(180deg,#3a2c22 0%,#241a14 60%,#1a120d 100%);
+    border:2px solid var(--gold);border-radius:4px;outline:1px solid #6b4a1f;outline-offset:-4px;
+    box-shadow:0 4px 18px rgba(0,0,0,.6),inset 0 0 22px rgba(232,182,76,.12);
+    color:var(--gold-hi);padding:8px 16px;text-align:center;min-width:110px}
+  .stone-plate .label{font-size:10px;letter-spacing:3px;color:var(--sand);text-transform:uppercase}
+  .stone-plate .value{font-size:26px;font-weight:bold;color:var(--gold-hi);text-shadow:0 0 12px rgba(255,180,60,.55);font-variant-numeric:tabular-nums}
+  #score-plate{min-width:150px}
+  #powerbar{position:absolute;top:96px;left:18px;display:flex;flex-direction:column;gap:6px}
+  .pow{font-size:13px;letter-spacing:1px;padding:5px 12px;border-radius:20px;display:none;
+    background:rgba(20,10,5,.78);border:1px solid var(--gold);color:var(--gold-hi)}
+  .pow.on{display:block;animation:powpulse 1s infinite alternate}
+  @keyframes powpulse{from{box-shadow:0 0 4px rgba(255,180,60,.4)}to{box-shadow:0 0 16px rgba(255,180,60,.95)}}
+  #turn-prompt{position:absolute;left:50%;bottom:26%;transform:translateX(-50%);display:none;
+    font-size:44px;color:var(--gold-hi);text-shadow:0 0 24px rgba(255,150,30,.9),0 2px 0 #5a2c00;animation:turnblink .45s infinite alternate}
+  @keyframes turnblink{from{opacity:.65;transform:translateX(-50%) scale(1)}to{opacity:1;transform:translateX(-50%) scale(1.18)}}
+  #mute-btn,#pause-btn{pointer-events:auto;cursor:pointer;background:linear-gradient(180deg,#3a2c22,#1a120d);
+    border:2px solid var(--gold);color:var(--gold-hi);border-radius:4px;font-size:18px;width:44px;height:44px}
+  /* ---------- screens ---------- */
+  .screen{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:24px;background:radial-gradient(ellipse at 50% 70%,rgba(20,8,30,.25) 0%,rgba(8,4,18,.78) 100%)}
+  .screen.hidden{display:none}
+  .game-title{font-size:clamp(38px,7vw,84px);color:var(--gold-hi);letter-spacing:6px;line-height:1.05;
+    text-shadow:0 0 30px rgba(255,150,40,.65),0 4px 0 #4a2400,0 8px 30px rgba(0,0,0,.8)}
+  .game-sub{color:var(--sand);letter-spacing:4px;font-size:clamp(11px,1.6vw,16px);margin:10px 0 4px;text-transform:uppercase}
+  .title-rule{width:min(420px,70vw);height:3px;margin:14px auto;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);box-shadow:0 0 12px rgba(232,182,76,.8)}
+  .lore{max-width:560px;color:#e8d5b0;font-style:italic;font-size:clamp(13px,1.8vw,16px);line-height:1.55;opacity:.92}
+  .gold-btn{pointer-events:auto;cursor:pointer;margin-top:22px;font-family:inherit;font-size:20px;letter-spacing:3px;
+    color:#2a1500;background:linear-gradient(180deg,#ffe6a3 0%,#e8b64c 45%,#b57a1f 100%);
+    border:2px solid #fff0c0;border-radius:4px;padding:14px 46px;text-transform:uppercase;font-weight:bold;
+    box-shadow:0 0 26px rgba(232,182,76,.55),0 4px 0 #6b4210;transition:transform .12s}
+  .gold-btn:hover{transform:scale(1.05)} .gold-btn:active{transform:scale(.97)}
+  .controls-grid{margin-top:18px;display:grid;grid-template-columns:auto auto;gap:6px 18px;color:#d9c49a;
+    font-size:14px;background:rgba(10,5,15,.55);border:1px solid rgba(232,182,76,.4);border-radius:6px;padding:14px 22px}
+  .controls-grid b{color:var(--gold-hi);font-weight:bold}
+  #over-stats{display:flex;gap:14px;margin-top:16px;flex-wrap:wrap;justify-content:center}
+  #over-stats .stone-plate{min-width:120px}
+  #newbest{display:none;color:#ffe6a3;letter-spacing:3px;margin-top:10px;animation:turnblink .5s infinite alternate}
+  .hint{margin-top:14px;color:#9a8560;font-size:12px;letter-spacing:2px}
+  /* ---------- touch buttons ---------- */
+  #touch-ui{position:fixed;inset:auto 0 0 0;z-index:15;display:none;justify-content:space-between;align-items:flex-end;
+    padding:0 14px calc(16px + env(safe-area-inset-bottom));pointer-events:none}
+  body.playing.touch #touch-ui{display:flex}
+  .tbtn{pointer-events:auto;width:64px;height:64px;border-radius:50%;font-size:24px;color:var(--gold-hi);
+    background:rgba(30,18,10,.55);border:2px solid rgba(232,182,76,.75)}
+  .tbtn:active{background:rgba(232,182,76,.5)}
+  #t-left-right{display:flex;gap:12px}
+  #death-reason{color:#ff9a7a;font-style:italic;margin-top:8px;min-height:22px}
+  #fps-warn{position:fixed;bottom:6px;right:10px;z-index:9;color:rgba(255,255,255,.35);font-size:11px;font-family:monospace;pointer-events:none}
+</style>
+<script type="importmap">
+{ "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+<div id="warmgrade"></div><div id="speedlines"></div><div id="vignette"></div><div id="damage-flash"></div>
+<div id="letterbox-top"></div><div id="letterbox-bot"></div>
+
+<div id="hud">
+  <div class="hud-top">
+    <div style="display:flex;gap:8px">
+      <button id="mute-btn" title="Mute (M)">🔔</button>
+      <button id="pause-btn" title="Pause (P)">⏸</button>
+    </div>
+    <div class="stone-plate" id="score-plate"><div class="label">Score</div><div class="value" id="h-score">0</div></div>
+    <div style="display:flex;gap:10px">
+      <div class="stone-plate"><div class="label">Distance</div><div class="value" id="h-dist">0m</div></div>
+      <div class="stone-plate"><div class="label">◉ Coins</div><div class="value" id="h-coins">0</div></div>
+    </div>
+  </div>
+  <div id="powerbar">
+    <div class="pow" id="p-magnet">🧲 MAGNET <span>8s</span></div>
+    <div class="pow" id="p-shield">🛡 SHIELD</div>
+    <div class="pow" id="p-mult">✦ 2× SCORE <span>10s</span></div>
+  </div>
+  <div id="turn-prompt">⬅ TURN! ➡</div>
+</div>
+
+<div id="touch-ui">
+  <div id="t-left-right"><button class="tbtn" id="t-left">◀</button><button class="tbtn" id="t-right">▶</button></div>
+  <div style="display:flex;gap:12px"><button class="tbtn" id="t-slide">▼</button><button class="tbtn" id="t-jump">▲</button></div>
+</div>
+
+<div class="screen" id="screen-start">
+  <div class="game-sub">Mid-9th century · Rashtrakuta frontier</div>
+  <div class="game-title">PALACE<br>RUNNER</div>
+  <div class="title-rule"></div>
+  <div class="lore">You slipped past the yali guardians at dusk, stole the temple ruby — and the drums woke.
+  Now flee through gopurams, mandapas and moonlit tanks while the palace itself tries to stop you.</div>
+  <button class="gold-btn" id="btn-start">▶ &nbsp;Run</button>
+  <div class="controls-grid">
+    <span><b>A / D</b> or <b>◀ ▶</b></span><span>change lane · turn at gates</span>
+    <span><b>W / ▲ / Space</b></span><span>jump fallen columns</span>
+    <span><b>S / ▼</b></span><span>slide under lintels</span>
+    <span><b>Swipe</b> on touch</span><span>buttons appear on mobile</span>
+    <span><b>P</b> · <b>M</b></span><span>pause · mute</span>
+  </div>
+  <div class="hint" id="best-line">BEST —</div>
+</div>
+
+<div class="screen hidden" id="screen-pause">
+  <div class="game-title" style="font-size:52px">PAUSED</div>
+  <div class="title-rule"></div>
+  <button class="gold-btn" id="btn-resume">Resume</button>
+  <button class="gold-btn" id="btn-quit" style="font-size:15px;padding:10px 30px">Abandon Run</button>
+</div>
+
+<div class="screen hidden" id="screen-over">
+  <div class="game-sub" id="death-reason">The palace claims another intruder.</div>
+  <div class="game-title" style="font-size:52px">CAUGHT</div>
+  <div class="title-rule"></div>
+  <div id="newbest">✦ NEW BEST ✦</div>
+  <div id="over-stats">
+    <div class="stone-plate"><div class="label">Score</div><div class="value" id="o-score">0</div></div>
+    <div class="stone-plate"><div class="label">Distance</div><div class="value" id="o-dist">0m</div></div>
+    <div class="stone-plate"><div class="label">Coins</div><div class="value" id="o-coins">0</div></div>
+    <div class="stone-plate"><div class="label">Best</div><div class="value" id="o-best">0</div></div>
+  </div>
+  <button class="gold-btn" id="btn-again">↻ &nbsp;Run Again</button>
+  <div class="hint">SPACE / TAP TO RUN AGAIN</div>
+</div>
+
+<div id="fps-warn"></div>
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>
