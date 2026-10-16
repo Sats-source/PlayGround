@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Forge3D — Image to UE5-Worthy 3D Models, Free &amp; Unlimited, 100% Local</title>
+<meta name="description" content="Turn any image into a high-poly PBR 3D model with cinematic lighting. Runs on WebGL, fully local in your browser. Free and unlimited." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236ee7ff'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpolygon points='16,3 28,10 28,22 16,29 4,22 4,10' fill='none' stroke='url(%23g)' stroke-width='3'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">⬢</span>
+    <div>
+      <h1>Forge3D</h1>
+      <p>image → UE5-worthy WebGL model · free · unlimited · 100% local</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <span id="engineBadge" class="badge">WebGL · local</span>
+    <button id="btnHelp" class="ghost-btn" type="button">How it works</button>
+  </div>
+</header>
+
+<div id="helpOverlay" class="overlay hidden">
+  <div class="overlay-card">
+    <h2>How Forge3D works</h2>
+    <ol>
+      <li><strong>Drop in any image.</strong> PNG, JPG, WebP — it never leaves your device.</li>
+      <li><strong>Depth is estimated on-device.</strong> A Depth-Anything AI model runs locally via WebAssembly (downloaded once, cached). No network image upload, no credits, no limits. If the AI model can't load, a built-in shape-from-shading fallback kicks in.</li>
+      <li><strong>A dense high-poly mesh is forged.</strong> Up to ~300k triangles with sculpted displacement, baked normal maps, roughness variation and cavity AO — the same ingredients that make UE5 assets look rich.</li>
+      <li><strong>Cinematic UE5-style lighting.</strong> Image-based lighting, soft shadows, ACES filmic tone mapping and optional bloom — all real-time WebGL.</li>
+      <li><strong>Export &amp; reuse.</strong> Download GLB (for web / Blender / Unity / Unreal), STL (for 3D printing) or PNG turntable shots.</li>
+    </ol>
+    <p class="muted">Honest note: a single photo becomes a premium 2.5D solid (bas-relief statue). It looks fully 3D from the front hemisphere and spins nicely on a turntable — true unseen-backside hallucination isn't possible from one photo.</p>
+    <button id="btnCloseHelp" class="primary-btn" type="button">Start forging</button>
+  </div>
+</div>
+
+<main class="layout">
+  <aside class="panel">
+    <section class="card">
+      <h2><span class="step">1</span> Source image</h2>
+      <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload an image">
+        <div class="dz-inner">
+          <span class="dz-icon">🖼️</span>
+          <p><strong>Drop an image here</strong><br />or click / paste (Ctrl+V)</p>
+          <input id="fileInput" type="file" accept="image/*" hidden />
+        </div>
+      </div>
+      <div class="samples">
+        <span class="muted">No image handy? Try a sample:</span>
+        <div class="sample-row">
+          <button class="sample-btn" data-sample="peak" type="button">🏔️ Peak</button>
+          <button class="sample-btn" data-sample="orb" type="button">🔮 Orb</button>
+          <button class="sample-btn" data-sample="bloom" type="button">🌸 Bloom</button>
+        </div>
+      </div>
+      <div class="thumb-row">
+        <figure><canvas id="srcPreview" width="160" height="120"></canvas><figcaption>source</figcaption></figure>
+        <figure><canvas id="depthPreview" width="160" height="120"></canvas><figcaption>depth map</figcaption></figure>
+      </div>
+      <div id="aiStatus" class="status">AI depth: not loaded (will fetch on first forge, cached after)</div>
+      <div class="progress hidden" id="progressWrap"><div id="progressBar"></div></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">2</span> Geometry (Nanite-style dense mesh)</h2>
+      <label class="row"><span>Detail (mesh resolution)</span>
+        <select id="optResolution">
+          <option value="160">Fast · 160 (~50k tris)</option>
+          <option value="224">Balanced · 224 (~100k tris)</option>
+          <option value="288" selected>High · 288 (~165k tris)</option>
+          <option value="384">Ultra · 384 (~295k tris)</option>
+        </select>
+      </label>
+      <label class="row"><span>Relief depth <b id="vDepth">0.9</b></span>
+        <input id="optDepth" type="range" min="0.1" max="2" step="0.05" value="0.9" />
+      </label>
+      <label class="row"><span>Surface smoothing <b id="vSmooth">1</b></span>
+        <input id="optSmooth" type="range" min="0" max="4" step="1" value="1" />
+      </label>
+      <label class="row"><span>Background push <b id="vBg">0.35</b></span>
+        <input id="optBg" type="range" min="0" max="1" step="0.05" value="0.35" />
+      </label>
+      <label class="row"><span>Thickness <b id="vThick">0.35</b></span>
+        <input id="optThick" type="range" min="0.05" max="1" step="0.05" value="0.35" />
+      </label>
+      <label class="row"><span>Micro-normal detail <b id="vNormal">1.2</b></span>
+        <input id="optNormal" type="range" min="0" max="3" step="0.1" value="1.2" />
+      </label>
+      <button id="btnForge" class="primary-btn" type="button">⚒️ Forge 3D model</button>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">3</span> Material &amp; Lumen-style light</h2>
+      <label class="row"><span>Material preset</span>
+        <select id="optMaterial">
+          <option value="statue" selected>Polished statue (clearcoat)</option>
+          <option value="clay">Clay render</option>
+          <option value="metal">Forged metal</option>
+          <option value="skin">Soft organic</option>
+          <option value="photo">True photo albedo</option>
+        </select>
+      </label>
+      <label class="row"><span>Metalness <b id="vMetal">0.05</b></span>
+        <input id="optMetal" type="range" min="0" max="1" step="0.05" value="0.05" />
+      </label>
+      <label class="row"><span>Roughness <b id="vRough">0.42</b></span>
+        <input id="optRough" type="range" min="0.05" max="1" step="0.05" value="0.42" />
+      </label>
+      <label class="row"><span>Lighting mood</span>
+        <select id="optLight">
+          <option value="studio" selected>Studio (neutral IBL)</option>
+          <option value="sunset">Golden sunset</option>
+          <option value="night">Midnight neon</option>
+          <option value="dramatic">Dramatic rim</option>
+        </select>
+      </label>
+      <div class="check-row">
+        <label><input id="optBloom" type="checkbox" /> Bloom</label>
+        <label><input id="optSpin" type="checkbox" checked /> Turntable</label>
+        <label><input id="optWire" type="checkbox" /> Wireframe</label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">4</span> Export (yours forever)</h2>
+      <div class="btn-grid">
+        <button id="btnGLB" class="ghost-btn" type="button">⬇ GLB</button>
+        <button id="btnSTL" class="ghost-btn" type="button">⬇ STL</button>
+        <button id="btnPNG" class="ghost-btn" type="button">📷 PNG</button>
+      </div>
+      <p class="muted small">GLB → web / Blender / Unity / Unreal · STL → 3D printing. Unlimited, no account, no watermark.</p>
+    </section>
+  </aside>
+
+  <section class="viewport-wrap">
+    <div id="viewport">
+      <canvas id="gl"></canvas>
+      <div id="emptyState">
+        <div class="empty-card">
+          <div class="empty-icon">⬢</div>
+          <h3>Your forge is ready</h3>
+          <p>Drop any image on the left — or tap a sample — then hit <strong>Forge 3D model</strong>.</p>
+          <p class="muted small">Everything runs locally with WebGL. Free &amp; unlimited.</p>
+        </div>
+      </div>
+      <div id="viewportHud">
+        <span id="statTris">– tris</span>
+        <span id="statFps">– fps</span>
+        <span id="statMs">depth: –</span>
+      </div>
+    </div>
+    <div id="log" class="log" aria-live="polite"></div>
+  </section>
+</main>
+
+<footer class="foot">
+  <span>Forge3D · single-file-friendly static app · Three.js WebGL + on-device depth AI · MIT — remix freely</span>
+</footer>
+
+<script>
+window.addEventListener('load', function () {
+  setTimeout(function () {
+    if (!window.__forgeBoot) {
+      var el = document.getElementById('log');
+      if (el) el.innerHTML += '<div class="err">[boot] CDN modules failed to load (no internet?). The app needs internet once for three.js CDN — all image processing itself stays local.</div>';
+    }
+  }, 9000);
+});
+</script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
