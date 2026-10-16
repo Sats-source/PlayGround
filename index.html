@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Proto3D — Free Unlimited Image to 3D Prototype Studio</title>
+<meta name="description" content="Turn any image into a 3D rendered prototype. 100% free, unlimited, private — runs fully in your browser." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◈</text></svg>" />
+<link rel="stylesheet" href="styles.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">◈</div>
+    <div>
+      <h1>Proto3D Studio</h1>
+      <p>image → 3D rendered prototype &nbsp;·&nbsp; <span class="pill">FREE</span> <span class="pill">UNLIMITED</span> <span class="pill dim">NO SIGN-UP · OFFLINE-CAPABLE</span></p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button id="btnSnapshot" class="btn ghost" title="Save PNG render">📷 PNG</button>
+    <button id="btnSTL" class="btn ghost" title="Export 3D-printable STL">🧊 STL</button>
+    <button id="btnGLB" class="btn primary" title="Export GLB for Blender / AR / web">⬇ Export GLB</button>
+    <button id="btnVideo" class="btn ghost" title="Record 360° turntable video">🎥 360°</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="panel">
+    <section class="card">
+      <h2>1 · Source image</h2>
+      <div id="dropZone" class="drop">
+        <div class="drop-icon">🖼️</div>
+        <div><strong>Drop any image here</strong><br><span>or click to browse · paste works too</span></div>
+        <input type="file" id="fileInput" accept="image/*" hidden />
+      </div>
+      <div class="row">
+        <button id="btnDemo" class="btn small">✨ Demo art</button>
+        <button id="btnCam" class="btn small">📸 Webcam</button>
+        <video id="camVideo" playsinline hidden></video>
+      </div>
+      <div class="row">
+        <input id="urlInput" type="url" placeholder="Paste image URL…" />
+        <button id="btnUrl" class="btn small">Load</button>
+      </div>
+      <div class="samples">
+        <button class="sample" data-sample="peaks">⛰ Peaks</button>
+        <button class="sample" data-sample="logo">◉ Logo</button>
+        <button class="sample" data-sample="portrait">🌙 Portrait</button>
+        <button class="sample" data-sample="circuit">🔲 Circuit</button>
+      </div>
+      <div class="thumb-row">
+        <img id="srcPreview" alt="source preview" />
+        <div class="thumb-meta"><span id="srcName">demo-art.png · 512×512</span><span id="srcInfo">private · processed on-device</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2 · 3D mode</h2>
+      <div class="modes">
+        <button class="mode active" data-mode="relief">⛰ Relief<span>heightfield prototype</span></button>
+        <button class="mode" data-mode="voxels">🧱 Voxels<span>pixel-block sculpture</span></button>
+        <button class="mode" data-mode="points">✨ Points<span>particle cloud</span></button>
+        <button class="mode" data-mode="card">📦 Card<span>beveled product blank</span></button>
+      </div>
+      <label class="ctl">Detail / resolution <b id="vDetail">180</b>
+        <input id="inDetail" type="range" min="48" max="256" value="180" />
+      </label>
+      <label class="ctl">Depth / extrusion <b id="vDepth">22</b>
+        <input id="inDepth" type="range" min="2" max="60" value="22" />
+      </label>
+      <label class="ctl">Smoothing <b id="vSmooth">2</b>
+        <input id="inSmooth" type="range" min="0" max="6" value="2" />
+      </label>
+      <label class="ctl">Contrast <b id="vContrast">1.15</b>
+        <input id="inContrast" type="range" min="0.4" max="2.5" step="0.05" value="1.15" />
+      </label>
+      <label class="ctl">Brightness <b id="vBright">0.00</b>
+        <input id="inBright" type="range" min="-0.5" max="0.5" step="0.01" value="0" />
+      </label>
+      <div class="row checks">
+        <label><input id="inInvert" type="checkbox" /> Invert depth</label>
+        <label><input id="inCutout" type="checkbox" checked /> Cut dark background</label>
+      </div>
+      <label class="ctl">Cutout threshold <b id="vCut">0.08</b>
+        <input id="inCut" type="range" min="0" max="0.5" step="0.01" value="0.08" />
+      </label>
+    </section>
+
+    <section class="card">
+      <h2>3 · Prototype finish</h2>
+      <label class="ctl">Surface
+        <select id="inSurface">
+          <option value="photo" selected>📷 Original photo texture</option>
+          <option value="heat">🌡 Height heat-map</option>
+          <option value="clay">⚪ Matte clay (3D-print look)</option>
+          <option value="neon">🌈 Neon topology</option>
+        </select>
+      </label>
+      <div class="row">
+        <label class="colorwell">Tint <input id="inTint" type="color" value="#e8e4da" /></label>
+        <label class="ctl slim">Metal <input id="inMetal" type="range" min="0" max="1" step="0.01" value="0.08" /></label>
+        <label class="ctl slim">Rough <input id="inRough" type="range" min="0" max="1" step="0.01" value="0.62" /></label>
+      </div>
+      <div class="row checks">
+        <label><input id="inWire" type="checkbox" /> Wireframe</label>
+        <label><input id="inFlat" type="checkbox" /> Flat shading</label>
+      </div>
+      <label class="ctl">Base thickness <b id="vBase">6</b>
+        <input id="inBase" type="range" min="0" max="20" value="6" />
+      </label>
+      <label class="ctl">Prototype width (mm) <b id="vSize">120</b>
+        <input id="inSize" type="range" min="40" max="220" value="120" />
+      </label>
+    </section>
+
+    <section class="card">
+      <h2>4 · Stage &amp; render</h2>
+      <div class="row checks">
+        <label><input id="inSpin" type="checkbox" checked /> Turntable spin</label>
+        <label><input id="inGrid" type="checkbox" checked /> Grid</label>
+        <label><input id="inPed" type="checkbox" checked /> Pedestal</label>
+      </div>
+      <label class="ctl">Studio light
+        <select id="inLight">
+          <option value="studio" selected>💡 Studio softbox</option>
+          <option value="sunset">🌇 Sunset rim</option>
+          <option value="night">🌌 Night neon</option>
+          <option value="claylight">⚪ Clay inspection</option>
+        </select>
+      </label>
+      <label class="ctl">Backdrop
+        <select id="inBg">
+          <option value="charcoal" selected>⬛ Charcoal</option>
+          <option value="paper">⬜ Paper white</option>
+          <option value="blue">🟦 Blueprint</option>
+          <option value="green">🟩 Chroma stage</option>
+        </select>
+      </label>
+      <div class="stats">
+        <div><span id="stTris">–</span><label>triangles</label></div>
+        <div><span id="stSize">–</span><label>print size</label></div>
+        <div><span id="stTime">–</span><label>build ms</label></div>
+      </div>
+      <p class="fine">100% free &amp; unlimited · no uploads, no queue, no watermark. Everything runs on your GPU. Export STL for 3D printing, GLB for Blender / web / AR.</p>
+    </section>
+  </aside>
+
+  <main class="stage">
+    <div id="viewport"></div>
+    <div id="emptyHint" class="hint hidden">Processing…</div>
+    <div class="viewport-bar">
+      <div class="vb-left">
+        <button id="btnFront" class="btn small">Front</button>
+        <button id="btnTop" class="btn small">Top</button>
+        <button id="btnSide" class="btn small">3/4</button>
+      </div>
+      <div class="vb-right"><span id="status">Ready · drag any image in</span></div>
+    </div>
+    <div class="strip">
+      <div class="strip-item"><b>1</b> Drop image</div><div class="strip-arrow">→</div>
+      <div class="strip-item"><b>2</b> Tune depth</div><div class="strip-arrow">→</div>
+      <div class="strip-item"><b>3</b> Pick finish</div><div class="strip-arrow">→</div>
+      <div class="strip-item"><b>4</b> Export STL / GLB / PNG</div>
+    </div>
+  </main>
+</div>
+
+<canvas id="proc" width="512" height="512" hidden></canvas>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
